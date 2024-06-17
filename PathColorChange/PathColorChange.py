@@ -17,8 +17,8 @@ def extract_contents():
         for file_path in file_paths:
             try:
                 with open(file_path, 'r', encoding='utf-8') as file:
-                    content = file.read()
-                    files_contents.append(content)
+                    contents = file.read()
+                    files_contents.append(contents)
             except Exception as e:
                 messagebox.showerror("エラー", f"ファイル {file_path} を読み込めませんでした。\n{e}")
 
@@ -32,7 +32,7 @@ def extract_pitch_and_coord(files_contents, keywards):
     coord_keyward = keywards[1]  # poly3d
 
     pitch_and_paths = {}
-    # 座標をピッチごとに辞書化　key:ピッチ, value:パス座標リスト
+    # 座標をピッチごとに辞書化　{key:ピッチ, value:パス座標リスト}
     for file_contents in files_contents:
         lines = file_contents.split('\n')
         for line in lines:
@@ -111,7 +111,7 @@ def display_paths(pitch_and_paths):
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(description="ピッチごとに骨格パスの色を変えるプログラム")
+    parser = argparse.ArgumentParser(description="ピッチごとに骨格パスの色を変えるスクリプト")
 
     # パラメータ設定
     # 骨格パスファイルに含まれるピッチと座標情報を抽出するためのキーワード
