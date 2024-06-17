@@ -2,14 +2,12 @@ import argparse
 import sys
 from tkinter import filedialog
 from tkinter import messagebox
-import open3d as o3d
-import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
 
 def extract_contents():
-    # 複数の骨格パステキストファイルを読み込み、リストで返す関数
+    # 複数の骨格パステキストファイルを読み込み、内容をリスト化して返す関数
 
     file_paths = filedialog.askopenfilenames(title="ファイルを選択",
                                              filetypes=(("テキストファイル", "*.txt"), ("すべてのファイル", "*.*")))
@@ -27,11 +25,11 @@ def extract_contents():
         return files_contents
 
 
-def extract_pitch_and_coord(files_contents, search_texts):
+def extract_pitch_and_coord(files_contents, keywards):
     # 骨格パスファイルからパスの座標を抽出して、ピッチごとに辞書化する関数
 
-    pitch_keyward = search_texts[0]  # Pitch
-    coord_keyward = search_texts[1]  # poly3d
+    pitch_keyward = keywards[0]  # Pitch
+    coord_keyward = keywards[1]  # poly3d
 
     pitch_and_paths = {}
     # 座標をピッチごとに辞書化　key:ピッチ, value:パス座標リスト
@@ -45,10 +43,20 @@ def extract_pitch_and_coord(files_contents, search_texts):
             elif line.startswith(coord_keyward):
                 pitch_and_paths[pitch].append(line.split()[1:])
 
+    for pitch, paths in pitch_and_paths.items():
+        if not pitch or not paths:
+            messagebox.showerror("エラー", "該当しないファイルが含まれています。")
+            sys.exit()
+    if pitch_and_paths == {}:
+        messagebox.showerror("エラー", "該当しないファイルが含まれています。")
+        sys.exit()
+
     return pitch_and_paths
 
 
 def display_paths(pitch_and_paths):
+    # ピッチごとに色分けして座標にプロットする関数
+
     # ピッチの数を取得
     num_pitches = len(pitch_and_paths)
 
@@ -56,7 +64,7 @@ def display_paths(pitch_and_paths):
     colormap = cm.get_cmap('hsv')
     pitch_colors = {pitch: colormap(i / num_pitches)[:3] for i, pitch in enumerate(pitch_and_paths)}
 
-    geometries = []
+    ax = plt.figure().add_subplot(111, projection='3d')
 
     # ピッチごとに色分けして座標にプロット
     for pitch, paths in pitch_and_paths.items():
@@ -64,24 +72,40 @@ def display_paths(pitch_and_paths):
         y_coords = [float(path[1]) for path in paths]
         z_coords = [float(path[2]) for path in paths]
 
-        points = np.vstack((x_coords, y_coords, z_coords)).T
-        colors_array = np.array([pitch_colors[pitch]] * len(points))
+        ax.scatter(x_coords, y_coords, z_coords, color=pitch_colors[pitch], label=pitch)
 
-        point_cloud = o3d.geometry.PointCloud()
-        point_cloud.points = o3d.utility.Vector3dVector(points)
-        point_cloud.colors = o3d.utility.Vector3dVector(colors_array)
+    # 凡例の追加
+    ax.legend()
 
-        geometries.append(point_cloud)
+    # 軸の目盛りを非表示にする
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_zticks([])
 
-    # open3d で 3D プロットを表示
-    o3d.visualization.draw_geometries(geometries)
+    # 軸のラベルを非表示にする
+    ax.set_xlabel('')
+    ax.set_ylabel('')
+    ax.set_zlabel('')
 
-    # matplotlib でピッチと対応する色の凡例を表示
-    plt.figure()
-    for pitch, color in pitch_colors.items():
-        plt.scatter([], [], color=color, label=pitch)
-    plt.legend()
-    plt.title('Pitch and Corresponding Colors')
+    # 軸のパネルを非表示にする
+    ax.xaxis.pane.fill = False
+    ax.yaxis.pane.fill = False
+    ax.zaxis.pane.fill = False
+
+    # 軸のラインを非表示にする
+    ax.w_xaxis.line.set_color((1.0, 1.0, 1.0, 0.0))
+    ax.w_yaxis.line.set_color((1.0, 1.0, 1.0, 0.0))
+    ax.w_zaxis.line.set_color((1.0, 1.0, 1.0, 0.0))
+
+    # 軸のパネルのエッジカラーを透明にする
+    ax.xaxis.pane.set_edgecolor((1.0, 1.0, 1.0, 0.0))
+    ax.yaxis.pane.set_edgecolor((1.0, 1.0, 1.0, 0.0))
+    ax.zaxis.pane.set_edgecolor((1.0, 1.0, 1.0, 0.0))
+
+    # グリッドを非表示にする
+    ax.grid(False)
+
+    # プロットを表示
     plt.show()
 
 
@@ -91,13 +115,13 @@ if __name__ == '__main__':
 
     # パラメータ設定
     # 骨格パスファイルに含まれるピッチと座標情報を抽出するためのキーワード
-    search_texts = ["Pitch", "poly3d"]
+    search_keywards = ["Pitch", "poly3d"]
 
     # 関数実行
     files_contents = extract_contents()
 
     if files_contents:
-        pitch_and_paths = extract_pitch_and_coord(files_contents, search_texts)
+        pitch_and_paths = extract_pitch_and_coord(files_contents, search_keywards)
         display_paths(pitch_and_paths)
     else:
         print("ファイルが選択されませんでした。")
