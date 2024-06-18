@@ -71,15 +71,18 @@ def select_recipe_type():
 def import_riblet_image(image_folder, recipe_type):
     # select_recipe_type()で選択されたレシピに対応するリブレットのイメージ画像を読み込む。
 
+    # レシピに対応するリブレットのテンプレート画像を読み込む
     if recipe_type == "Positive":
         image_path = image_folder + "\positive_riblet.png"
     elif recipe_type == "Negative":
         image_path = image_folder + "\\negative_riblet.png"
 
-    pass
+    riblet_image = cv2.imread(image_path)
+
+    return riblet_image
 
 
-def display_recipe(files_contents):
+def display_recipe(files_contents, riblet_image):
     # 読み込んだファイルからレシピを抽出して表示する関数
 
     # コメント行を削除
@@ -105,13 +108,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="条件出しレシピファイルを可視化するスクリプト")
 
     # パラメータ設定
-    # リブレットイメージ画像の相対パス
-    image_folder = os.path.join(os.path.dirname(__file__), "RibletImage")
+    image_folder = os.path.join(os.path.dirname(__file__), "RibletImage")  # リブレットイメージ画像の相対パス
 
     # 関数実行
     recipe_type = select_recipe_type()
-    import_riblet_image(image_folder, recipe_type)
+    riblet_image = import_riblet_image(image_folder, recipe_type)
     files_contents = extract_contents()
+    display_recipe(files_contents, riblet_image)
 
     if files_contents:
         print(recipe_type)
