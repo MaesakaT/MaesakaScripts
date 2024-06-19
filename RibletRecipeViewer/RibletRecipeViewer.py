@@ -1,5 +1,4 @@
 import cv2
-import numpy as np
 import argparse
 import sys
 import os
@@ -82,25 +81,51 @@ def import_riblet_image(image_folder, recipe_type):
     return riblet_image
 
 
-def display_recipe(files_contents, riblet_image):
-    # 読み込んだファイルからレシピを抽出して表示する関数
+def display_recipe(files_contents, riblet_image, command, subcommand):
+    # 読み込んだファイルからレーザースキャン位置を抽出し、リブレットイメージに矢印を描画する。
 
-    # コメント行を削除
-    for file_name, contents in files_contents.items():
-        for content in contents:
-            if content[0] == ';':
-                contents.remove(content)
+    recipe_command = command[0]   # レーザースキャン位置を記述するコマンド "recipe"
+    offset_subcommand = subcommand[0]   # レーザースキャン位置のオフセットを記述するサブコマンド "D"
 
-    # レシピ行を抽出
+    # ファイルごとにrecipeコマンドの内容を抽出
     recipe_contents = {}
     for file_name, contents in files_contents.items():
         recipe = []
         for content in contents:
-            if content[0] == 'recipe':
+            if content[0] == recipe_command:
                 recipe.append(content)
         recipe_contents[file_name] = recipe
 
-    return files_contents
+    offset_set = {}  # ファイルごとのオフセットを格納する辞書　{key:ファイル名, value: オフセットリスト}
+
+    # ファイルごとにオフセットを抽出
+    for file_name, recipe in recipe_contents.items():
+        offset_set[file_name] = []
+        for row in recipe:
+            if offset_subcommand in row:
+                i = row.index(offset_subcommand)
+                offset = row[i + 1:]
+                offset = [float(value) for value in offset]
+                offset_set[file_name].append(offset)
+
+    # --------------------------------------------------------------
+    # リブレットイメージに矢印を描画
+
+    height, width, _ = riblet_image.shape   # 画像のサイズを取得
+
+    # 矢印の設定
+    allow_color = (0, 255, 0)  # 矢印の色 緑
+    allow_thick = 2   # 矢印の太さ
+    arrow_length = 50   # 矢印の長さ
+
+    for file_name, offsets in offset_set.items():
+
+        cv2.arrowedLine(riblet_image, (0, 0), (arrow_length, 0), allow_color, allow_thick)  # 矢印を描画
+
+    # 画像を表示する
+    cv2.imshow('Recipe image', riblet_image)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
 
 if __name__ == '__main__':
@@ -108,16 +133,18 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="条件出しレシピファイルを可視化するスクリプト")
 
     # パラメータ設定
-    image_folder = os.path.join(os.path.dirname(__file__), "RibletImage")  # リブレットイメージ画像の相対パス
+    image_folder = os.path.join(os.path.dirname(__file__), "RibletImage")   # リブレットイメージ画像の相対パス
+    command = ["recipe"]  # レシピファイルのコマンド
+    subcommand = ["D"]  # レシピファイルのサブコマンド
 
     # 関数実行
     recipe_type = select_recipe_type()
     riblet_image = import_riblet_image(image_folder, recipe_type)
     files_contents = extract_contents()
-    display_recipe(files_contents, riblet_image)
+    test = display_recipe(files_contents, riblet_image, command, subcommand)
 
     if files_contents:
-        print(recipe_type)
+        print(test)
     else:
         print("ファイルが選択されませんでした。")
         sys.exit()
