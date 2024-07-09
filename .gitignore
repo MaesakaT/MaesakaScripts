@@ -1,0 +1,30 @@
+# OS固有のファイルを無視.DS_Store
+Thumbs.db
+
+# ログファイルを無視
+logs/
+*.log
+
+# バイナリファイルを無視
+*.exe
+*.dll
+
+# 一時ファイルを無視
+*.tmp
+*.swp
+
+# IDE固有のファイルを無視
+.vscode/
+.idea/
+
+# Node.jsの依存関係を無視
+node_modules/
+
+# Pythonの仮想環境を無視
+venv/
+__pycache__/
+*.pyc
+
+# その他、必要のないフォルダ・ファイルを無視
+TestFiles/
+python_project_temp/
